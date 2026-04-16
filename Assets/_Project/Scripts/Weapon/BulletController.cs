@@ -37,10 +37,8 @@ namespace Colosseum.Weapon
             _rb.gravityScale = _gravityScale;
             _rb.drag = _linearDrag;
 
-            // 총알 크기 적용
             transform.localScale = Vector3.one * SizeMultiplier;
 
-            // 발사
             float speed = _baseSpeed * SpeedMultiplier;
             _rb.velocity = direction.normalized * speed;
 
@@ -61,12 +59,7 @@ namespace Colosseum.Weapon
         {
             if (!Object.HasStateAuthority) return;
 
-            // 자기 자신에게는 데미지 안 줌
-            var playerObj = collision.gameObject.GetComponent<NetworkObject>();
-            if (playerObj != null && playerObj.InputAuthority == _owner)
-                return;
-
-            // 플레이어에게 맞았을 때
+            // 플레이어에게 맞았을 때 (자기 자신 포함)
             var health = collision.gameObject.GetComponent<PlayerHealth>();
             if (health != null)
             {
@@ -80,7 +73,6 @@ namespace Colosseum.Weapon
             if (_remainingBounces > 0)
             {
                 _remainingBounces--;
-                // 물리 엔진이 자동으로 반사 처리 (Physics Material 2D)
             }
             else
             {

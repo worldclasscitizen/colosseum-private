@@ -1,6 +1,7 @@
 using UnityEngine;
 using Fusion;
 using Colosseum.Weapon;
+using Colosseum.Game;
 
 namespace Colosseum.Player
 {
@@ -8,14 +9,16 @@ namespace Colosseum.Player
     {
         [Header("Health Settings")]
         [SerializeField] private float _maxHealth = 100f;
+        [SerializeField] private float _respawnDelay = 2f;
 
         [Networked, OnChangedRender(nameof(OnHealthChanged))]
         public float CurrentHealth { get; set; }
 
         [Networked] public NetworkBool IsDead { get; set; }
-
-        // 카드 modifier
         [Networked] public float LifestealPercent { get; set; } = 0f;
+        [Networked] private TickTimer _respawnTimer { get; set; }
+
+        private RoomManager _roomManager;
 
         public override void Spawned()
         {
@@ -23,6 +26,29 @@ namespace Colosseum.Player
             {
                 CurrentHealth = _maxHealth;
                 IsDead = false;
+            }
+
+            _roomManager = FindObjectOfType<RoomManager>();
+        }
+
+        public override void FixedUpdateNetwork()
+        {
+            if (!Object.HasStateAuthority) return;
+
+            // 리스폰 타이머
+            if (IsDead && _respawnTimer.Expired(Runner))
+            {
+                DoRespawn();
+            }
+
+            // 카메라 밖 padding 초과 사망 체크
+            if (!IsDead && _roomManager != null)
+            {
+                if (_roomManager.IsOutOfBounds(transform.position))
+                {
+                    Debug.Log($"[Colosseum] Player out of bounds!");
+                    Die(_roomManager.LastKiller);
+                }
             }
         }
 
@@ -34,16 +60,9 @@ namespace Colosseum.Player
             CurrentHealth -= damage;
             Debug.Log($"[Colosseum] Player hit! HP: {CurrentHealth}/{_maxHealth}");
 
-            // 상태이상 처리 (나중에 확장)
             if (status != BulletController.StatusEffect.None)
             {
-                Debug.Log($"[Colosseum] Status effect applied: {status}");
-            }
-
-            // 흡혈 처리: 공격자 회복
-            if (LifestealPercent > 0f)
-            {
-                // 나중에 카드 시스템에서 공격자 찾아서 회복
+                Debug.Log($"[Colosseum] Status effect: {status}");
             }
 
             if (CurrentHealth <= 0f)
@@ -57,21 +76,81 @@ namespace Colosseum.Player
         {
             IsDead = true;
             Debug.Log($"[Colosseum] Player died! Killed by {killer}");
-            // 나중에: 사망 → 카드 드로우 → 리스폰 → 카메라 전진
+
+            // RoomManager에 킬 등록
+            if (_roomManager != null)
+            {
+                _roomManager.RegisterKill(killer);
+            }
+
+            // 캐릭터 비활성화 (시각적으로)
+            var sr = GetComponent<SpriteRenderer>();
+            if (sr != null) sr.enabled = false;
+
+            var rb = GetComponent<Rigidbody2D>();
+            if (rb != null) rb.simulated = false;
+
+            // 리스폰 타이머 시작
+            _respawnTimer = TickTimer.CreateFromSeconds(Runner, _respawnDelay);
+
+            // 나중에: 카드 드로우 UI 표시
         }
 
-        public void Respawn()
+        private void DoRespawn()
         {
-            if (!Object.HasStateAuthority) return;
+            if (_roomManager == null) return;
+
+            // 상대방 위치 찾기
+            Vector2 opponentPos = FindOpponentPosition();
+
+            // 리스폰 위치 계산
+            Vector2 respawnPos = _roomManager.GetRespawnPosition(
+                Object.InputAuthority, opponentPos);
+
+            // 위치 이동 및 상태 복구
+            transform.position = new Vector3(respawnPos.x, respawnPos.y, 0f);
             CurrentHealth = _maxHealth;
             IsDead = false;
-            Debug.Log($"[Colosseum] Player respawned!");
+
+            var sr = GetComponent<SpriteRenderer>();
+            if (sr != null) sr.enabled = true;
+
+            var rb = GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.simulated = true;
+                rb.velocity = Vector2.zero;
+            }
+
+            Debug.Log($"[Colosseum] Player respawned at {respawnPos}");
+        }
+
+        private Vector2 FindOpponentPosition()
+        {
+            var players = FindObjectsOfType<PlayerHealth>();
+            foreach (var p in players)
+            {
+                if (p != this && p.Object != null)
+                {
+                    return p.transform.position;
+                }
+            }
+            return Vector2.zero;
+        }
+
+        /// <summary>
+        /// 외부에서 강제 사망 (방 전환 시 사용)
+        /// </summary>
+        public void ForceDeath(PlayerRef killer)
+        {
+            if (!Object.HasStateAuthority) return;
+            if (IsDead) return;
+            Die(killer);
         }
 
         private void OnHealthChanged()
         {
-            Debug.Log($"[Colosseum] Health changed: {CurrentHealth}/{_maxHealth}");
-            // 나중에: HP UI 업데이트
+            Debug.Log($"[Colosseum] Health: {CurrentHealth}/{_maxHealth}");
         }
     }
 }

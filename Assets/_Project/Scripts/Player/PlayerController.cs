@@ -1,6 +1,7 @@
 using UnityEngine;
 using Fusion;
 using Colosseum.Network;
+using Colosseum.Game;
 
 namespace Colosseum.Player
 {
@@ -17,6 +18,8 @@ namespace Colosseum.Player
 
         private Rigidbody2D _rb;
         private SpriteRenderer _spriteRenderer;
+        private PlayerHealth _health;
+        private RoomManager _roomManager;
 
         [Networked] private NetworkBool _isGrounded { get; set; }
 
@@ -24,6 +27,8 @@ namespace Colosseum.Player
         {
             _rb = GetComponent<Rigidbody2D>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
+            _health = GetComponent<PlayerHealth>();
+            _roomManager = FindObjectOfType<RoomManager>();
 
             if (Object.HasInputAuthority)
                 _spriteRenderer.color = Color.green;
@@ -33,6 +38,9 @@ namespace Colosseum.Player
 
         public override void FixedUpdateNetwork()
         {
+            // 죽었으면 조작 불가
+            if (_health != null && _health.IsDead) return;
+
             if (GetInput(out NetworkInputData input))
             {
                 _rb.velocity = new Vector2(input.Direction.x * _moveSpeed, _rb.velocity.y);
@@ -45,7 +53,61 @@ namespace Colosseum.Player
 
                 if (input.Direction.x != 0)
                     _spriteRenderer.flipX = input.Direction.x < 0;
+
+                // 방 끝 도달 감지
+                CheckRoomBoundary();
             }
+        }
+
+        private void CheckRoomBoundary()
+        {
+            if (_roomManager == null) return;
+            if (!Object.HasStateAuthority) return;
+
+            var room = _roomManager.GetCurrentRoom();
+            if (room == null) return;
+
+            bool isPlayer1 = Object.InputAuthority == _roomManager.Player1;
+
+            // Player1은 오른쪽 끝 도달 시 다음 방으로
+            if (isPlayer1 && transform.position.x >= room.rightBound)
+            {
+                if (_roomManager.TryAdvanceRoom(Object.InputAuthority, 1))
+                {
+                    OnRoomAdvanced();
+                }
+            }
+            // Player2는 왼쪽 끝 도달 시 다음 방으로
+            else if (!isPlayer1 && transform.position.x <= room.leftBound)
+            {
+                if (_roomManager.TryAdvanceRoom(Object.InputAuthority, -1))
+                {
+                    OnRoomAdvanced();
+                }
+            }
+        }
+
+        private void OnRoomAdvanced()
+        {
+            // 카메라 전환
+            var cam = FindObjectOfType<CameraSystem.CameraController>();
+            if (cam != null)
+            {
+                cam.SetWinnerTarget(transform);
+                cam.OnRoomChanged();
+            }
+
+            // 상대방 강제 사망 처리
+            var players = FindObjectsOfType<PlayerHealth>();
+            foreach (var p in players)
+            {
+                if (p.Object != null && p.Object.InputAuthority != Object.InputAuthority)
+                {
+                    p.ForceDeath(Object.InputAuthority);
+                }
+            }
+
+            Debug.Log($"[Colosseum] Room advanced! Winner moving forward.");
         }
     }
 }

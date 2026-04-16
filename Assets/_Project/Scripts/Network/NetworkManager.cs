@@ -72,6 +72,17 @@ namespace Colosseum.Network
                     _playerPrefab, spawnPos, Quaternion.identity, player);
 
                 _spawnedPlayers.Add(player, playerObj);
+
+                // RoomManager에 플레이어 등록
+                var roomManager = FindObjectOfType<Colosseum.Game.RoomManager>();
+                if (roomManager != null)
+                {
+                    if (_spawnedPlayers.Count == 1)
+                        roomManager.Player1 = player;
+                    else
+                        roomManager.Player2 = player;
+                }
+
                 Debug.Log($"[Colosseum] Player {player} spawned at {spawnPos}");
             }
         }
