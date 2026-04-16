@@ -32,7 +32,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.15, y: 0.15, z: 1}
+  m_LocalScale: {x: 0.08, y: 0.08, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -211,6 +211,7 @@ MonoBehaviour:
   _gravityScale: 1
   _linearDrag: 0.5
   _lifetime: 5
+  _ownerIgnoreTime: 0.15
   _DamageMultiplier: 1
   _SpeedMultiplier: 1
   _SizeMultiplier: 1

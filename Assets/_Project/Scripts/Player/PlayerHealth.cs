@@ -2,6 +2,7 @@ using UnityEngine;
 using Fusion;
 using Colosseum.Weapon;
 using Colosseum.Game;
+using Colosseum.Card;
 
 namespace Colosseum.Player
 {
@@ -19,6 +20,8 @@ namespace Colosseum.Player
         [Networked] private TickTimer _respawnTimer { get; set; }
 
         private RoomManager _roomManager;
+        private SpriteRenderer _spriteRenderer;
+        private Rigidbody2D _rb;
 
         public override void Spawned()
         {
@@ -29,6 +32,8 @@ namespace Colosseum.Player
             }
 
             _roomManager = FindObjectOfType<RoomManager>();
+            _spriteRenderer = GetComponent<SpriteRenderer>();
+            _rb = GetComponent<Rigidbody2D>();
         }
 
         public override void FixedUpdateNetwork()
@@ -41,12 +46,12 @@ namespace Colosseum.Player
                 DoRespawn();
             }
 
-            // 카메라 밖 padding 초과 사망 체크
+            // 맵 밖 사망 체크
             if (!IsDead && _roomManager != null)
             {
                 if (_roomManager.IsOutOfBounds(transform.position))
                 {
-                    Debug.Log($"[Colosseum] Player out of bounds!");
+                    Debug.Log("[Colosseum] Player out of bounds!");
                     Die(_roomManager.LastKiller);
                 }
             }
@@ -60,6 +65,12 @@ namespace Colosseum.Player
             CurrentHealth -= damage;
             Debug.Log($"[Colosseum] Player hit! HP: {CurrentHealth}/{_maxHealth}");
 
+            // 라이프스틸 처리
+            if (LifestealPercent > 0f && attacker != Object.InputAuthority)
+            {
+                HealAttacker(attacker, damage * LifestealPercent);
+            }
+
             if (status != BulletController.StatusEffect.None)
             {
                 Debug.Log($"[Colosseum] Status effect: {status}");
@@ -67,7 +78,6 @@ namespace Colosseum.Player
 
             if (CurrentHealth <= 0f)
             {
-                CurrentHealth = 0f;
                 Die(attacker);
             }
         }
@@ -75,7 +85,10 @@ namespace Colosseum.Player
         private void Die(PlayerRef killer)
         {
             IsDead = true;
-            Debug.Log($"[Colosseum] Player died! Killed by {killer}");
+            CurrentHealth = 0f;
+
+            // 시각적 비활성화 (본인 + 자식 포함)
+            SetVisuals(false);
 
             // RoomManager에 킬 등록
             if (_roomManager != null)
@@ -83,64 +96,41 @@ namespace Colosseum.Player
                 _roomManager.RegisterKill(killer);
             }
 
-            // 캐릭터 비활성화 (시각적으로)
-            var sr = GetComponent<SpriteRenderer>();
-            if (sr != null) sr.enabled = false;
+            // 사망한 플레이어가 카드 드로우
+            var cardDeck = FindObjectOfType<CardDeck>();
+            if (cardDeck != null)
+            {
+                cardDeck.StartDraw(Object.InputAuthority);
+            }
 
-            var rb = GetComponent<Rigidbody2D>();
-            if (rb != null) rb.simulated = false;
-
-            // 리스폰 타이머 시작
             _respawnTimer = TickTimer.CreateFromSeconds(Runner, _respawnDelay);
-
-            // 나중에: 카드 드로우 UI 표시
+            Debug.Log($"[Colosseum] Player died! Killer: {killer}");
         }
 
         private void DoRespawn()
         {
-            if (_roomManager == null) return;
+            IsDead = false;
+            CurrentHealth = _maxHealth;
 
-            // 상대방 위치 찾기
-            Vector2 opponentPos = FindOpponentPosition();
+            // 시각적 재활성화 (본인 + 자식 포함)
+            SetVisuals(true);
+            if (_rb != null)
+            {
+                _rb.simulated = true;
+                _rb.velocity = Vector2.zero;
+            }
 
             // 리스폰 위치 계산
-            Vector2 respawnPos = _roomManager.GetRespawnPosition(
-                Object.InputAuthority, opponentPos);
-
-            // 위치 이동 및 상태 복구
-            transform.position = new Vector3(respawnPos.x, respawnPos.y, 0f);
-            CurrentHealth = _maxHealth;
-            IsDead = false;
-
-            var sr = GetComponent<SpriteRenderer>();
-            if (sr != null) sr.enabled = true;
-
-            var rb = GetComponent<Rigidbody2D>();
-            if (rb != null)
+            if (_roomManager != null)
             {
-                rb.simulated = true;
-                rb.velocity = Vector2.zero;
+                Vector2 opponentPos = FindOpponentPosition();
+                Vector2 respawnPos = _roomManager.GetRespawnPosition(Object.InputAuthority, opponentPos);
+                transform.position = new Vector3(respawnPos.x, respawnPos.y, 0f);
             }
 
-            Debug.Log($"[Colosseum] Player respawned at {respawnPos}");
+            Debug.Log("[Colosseum] Player respawned!");
         }
 
-        private Vector2 FindOpponentPosition()
-        {
-            var players = FindObjectsOfType<PlayerHealth>();
-            foreach (var p in players)
-            {
-                if (p != this && p.Object != null)
-                {
-                    return p.transform.position;
-                }
-            }
-            return Vector2.zero;
-        }
-
-        /// <summary>
-        /// 외부에서 강제 사망 (방 전환 시 사용)
-        /// </summary>
         public void ForceDeath(PlayerRef killer)
         {
             if (!Object.HasStateAuthority) return;
@@ -150,7 +140,46 @@ namespace Colosseum.Player
 
         private void OnHealthChanged()
         {
-            Debug.Log($"[Colosseum] Health: {CurrentHealth}/{_maxHealth}");
+            // HP UI 업데이트용 (나중에 구현)
+        }
+
+        private void SetVisuals(bool visible)
+        {
+            // 본인 + 자식(Gun 등)의 모든 SpriteRenderer 제어
+            var renderers = GetComponentsInChildren<SpriteRenderer>(true);
+            foreach (var r in renderers)
+            {
+                r.enabled = visible;
+            }
+        }
+
+        private Vector2 FindOpponentPosition()
+        {
+            var players = FindObjectsOfType<NetworkObject>();
+            foreach (var p in players)
+            {
+                if (p.InputAuthority != Object.InputAuthority && p.GetComponent<PlayerHealth>() != null)
+                {
+                    return p.transform.position;
+                }
+            }
+            return Vector2.zero;
+        }
+
+        private void HealAttacker(PlayerRef attacker, float healAmount)
+        {
+            var players = FindObjectsOfType<NetworkObject>();
+            foreach (var p in players)
+            {
+                if (p.InputAuthority != attacker) continue;
+                var health = p.GetComponent<PlayerHealth>();
+                if (health != null)
+                {
+                    health.CurrentHealth = Mathf.Min(
+                        health.CurrentHealth + healAmount, _maxHealth);
+                }
+                break;
+            }
         }
     }
 }

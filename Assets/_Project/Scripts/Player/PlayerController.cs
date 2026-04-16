@@ -2,6 +2,7 @@ using UnityEngine;
 using Fusion;
 using Colosseum.Network;
 using Colosseum.Game;
+using Colosseum.Card;
 
 namespace Colosseum.Player
 {
@@ -20,6 +21,7 @@ namespace Colosseum.Player
         private SpriteRenderer _spriteRenderer;
         private PlayerHealth _health;
         private RoomManager _roomManager;
+        private CardEffect _cardEffect;
 
         [Networked] private NetworkBool _isGrounded { get; set; }
 
@@ -29,6 +31,7 @@ namespace Colosseum.Player
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _health = GetComponent<PlayerHealth>();
             _roomManager = FindObjectOfType<RoomManager>();
+            _cardEffect = GetComponent<CardEffect>();
 
             if (Object.HasInputAuthority)
                 _spriteRenderer.color = Color.green;
@@ -43,13 +46,22 @@ namespace Colosseum.Player
 
             if (GetInput(out NetworkInputData input))
             {
-                _rb.velocity = new Vector2(input.Direction.x * _moveSpeed, _rb.velocity.y);
+                // 카드 강화 적용된 이동 속도
+                float speed = _moveSpeed;
+                float jump = _jumpForce;
+                if (_cardEffect != null)
+                {
+                    speed *= _cardEffect.MoveSpeedMultiplier;
+                    jump *= _cardEffect.JumpForceMultiplier;
+                }
+
+                _rb.velocity = new Vector2(input.Direction.x * speed, _rb.velocity.y);
 
                 _isGrounded = Physics2D.OverlapBox(
                     _groundCheck.position, _groundCheckSize, 0f, _groundLayer) != null;
 
                 if (input.IsJumpPressed && _isGrounded)
-                    _rb.velocity = new Vector2(_rb.velocity.x, _jumpForce);
+                    _rb.velocity = new Vector2(_rb.velocity.x, jump);
 
                 if (input.Direction.x != 0)
                     _spriteRenderer.flipX = input.Direction.x < 0;
@@ -97,17 +109,7 @@ namespace Colosseum.Player
                 cam.OnRoomChanged();
             }
 
-            // 상대방 강제 사망 처리
-            var players = FindObjectsOfType<PlayerHealth>();
-            foreach (var p in players)
-            {
-                if (p.Object != null && p.Object.InputAuthority != Object.InputAuthority)
-                {
-                    p.ForceDeath(Object.InputAuthority);
-                }
-            }
-
-            Debug.Log($"[Colosseum] Room advanced! Winner moving forward.");
+            Debug.Log("[Colosseum] Room advanced!");
         }
     }
 }

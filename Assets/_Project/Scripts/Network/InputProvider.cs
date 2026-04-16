@@ -17,20 +17,22 @@ namespace Colosseum.Network
                     Input.GetAxisRaw("Vertical")),
                 IsJumpPressed = Input.GetKey(KeyCode.Space),
                 IsFirePressed = Input.GetMouseButton(0),
-                AimDirection = GetAimDirection()
+                AimDirection = GetMouseWorldPosition()
             };
 
             input.Set(data);
         }
 
-        private Vector2 GetAimDirection()
+        private Vector2 GetMouseWorldPosition()
         {
-            if (UnityEngine.Camera.main == null) return Vector2.right;
-            Vector3 mouseWorld = UnityEngine.Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            mouseWorld.z = 0f;
-            return ((Vector2)mouseWorld).normalized;
+            if (UnityEngine.Camera.main == null) return Vector2.zero;
+            Vector3 mousePos = Input.mousePosition;
+            mousePos.z = Mathf.Abs(UnityEngine.Camera.main.transform.position.z);
+            Vector3 mouseWorld = UnityEngine.Camera.main.ScreenToWorldPoint(mousePos);
+            return new Vector2(mouseWorld.x, mouseWorld.y);
         }
 
+        // INetworkRunnerCallbacks 빈 구현
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player) { }
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
         public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
@@ -48,6 +50,4 @@ namespace Colosseum.Network
         public void OnSceneLoadDone(NetworkRunner runner) { }
         public void OnSceneLoadStart(NetworkRunner runner) { }
         public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
-        public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
-    }
-}
+        public void OnObjectEnterAOI(NetworkRunner runner, Netwo

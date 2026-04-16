@@ -1,6 +1,7 @@
 using UnityEngine;
 using Fusion;
 using Colosseum.Network;
+using Colosseum.Card;
 
 namespace Colosseum.Weapon
 {
@@ -13,39 +14,55 @@ namespace Colosseum.Weapon
 
         [Networked] public float FireRateMultiplier { get; set; } = 1f;
         [Networked] public int ExtraBullets { get; set; } = 0;
-
         [Networked] private TickTimer _fireCooldown { get; set; }
+        [Networked] private Vector2 _networkedAimDir { get; set; }
+
+        private CardEffect _cardEffect;
+
+        public override void Spawned()
+        {
+            // 부모(Player)에서 CardEffect 컴포넌트 찾기
+            _cardEffect = GetComponentInParent<CardEffect>();
+        }
 
         public override void FixedUpdateNetwork()
         {
             if (GetInput(out NetworkInputData input))
             {
+                // 마우스 월드 좌표 → 총 위치 기준 방향 계산
+                Vector2 aimDir = (Vector2)input.AimDirection - (Vector2)transform.position;
+                if (aimDir == Vector2.zero) aimDir = Vector2.right;
+                _networkedAimDir = aimDir.normalized;
+
                 if (input.IsFirePressed && _fireCooldown.ExpiredOrNotRunning(Runner))
                 {
-                    Fire(input.AimDirection);
+                    Fire();
                     float cooldown = _fireRate / FireRateMultiplier;
                     _fireCooldown = TickTimer.CreateFromSeconds(Runner, cooldown);
                 }
             }
         }
 
-        private void Fire(Vector2 aimDirection)
+        public override void Render()
+        {
+            if (_networkedAimDir != Vector2.zero)
+            {
+                float angle = Mathf.Atan2(_networkedAimDir.y, _networkedAimDir.x) * Mathf.Rad2Deg;
+                transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+            }
+        }
+
+        private void Fire()
         {
             if (!Object.HasStateAuthority) return;
 
-            // 조준 방향 계산 (마우스 위치 - 총구 위치)
-            Vector2 dir = aimDirection - (Vector2)_muzzle.position;
-            if (dir == Vector2.zero) dir = Vector2.right;
-            dir = dir.normalized;
+            Vector2 fireDir = _networkedAimDir;
+            SpawnBullet(fireDir);
 
-            // 기본 총알 발사
-            SpawnBullet(dir);
-
-            // 카드로 추가 총알이 있으면 약간 각도 틀어서 발사
             for (int i = 0; i < ExtraBullets; i++)
             {
                 float angle = (i + 1) * 10f * (i % 2 == 0 ? 1f : -1f);
-                Vector2 spreadDir = Rotate(dir, angle);
+                Vector2 spreadDir = Rotate(fireDir, angle);
                 SpawnBullet(spreadDir);
             }
         }
@@ -56,11 +73,32 @@ namespace Colosseum.Weapon
                 _bulletPrefab,
                 _muzzle.position,
                 Quaternion.identity,
-                Object.InputAuthority);
+                Object.InputAuthority
+            );
 
             var bullet = bulletObj.GetComponent<BulletController>();
             if (bullet != null)
             {
+                // CardEffect 강화 수치를 총알에 적용
+                if (_cardEffect != null)
+                {
+                    Debug.Log($"[Colosseum] Gun reading CardEffect - SizeMul:{_cardEffect.BulletSizeMultiplier}, SpeedMul:{_cardEffect.BulletSpeedMultiplier}, Bounce:{_cardEffect.BonusBounce}");
+                    bullet.DamageMultiplier = _cardEffect.DamageMultiplier;
+                    bullet.SpeedMultiplier = _cardEffect.BulletSpeedMultiplier;
+                    bullet.SizeMultiplier = _cardEffect.BulletSizeMultiplier;
+                    bullet.BounceCount = _cardEffect.BonusBounce;
+
+                    if (_cardEffect.CurrentStatusEffect != 0)
+                    {
+                        bullet.AppliedStatus = (BulletController.StatusEffect)_cardEffect.CurrentStatusEffect;
+                    }
+                }
+
+                bullet.Init(Object.InputAuthority, direction);
+            }
+            else
+            {
+                Debug.LogWarning("[Colosseum] Gun: _cardEffect is NULL! Card effects won't apply.");
                 bullet.Init(Object.InputAuthority, direction);
             }
         }
@@ -70,7 +108,10 @@ namespace Colosseum.Weapon
             float rad = degrees * Mathf.Deg2Rad;
             float cos = Mathf.Cos(rad);
             float sin = Mathf.Sin(rad);
-            return new Vector2(v.x * cos - v.y * sin, v.x * sin + v.y * cos);
+            return new Vector2(
+                v.x * cos - v.y * sin,
+                v.x * sin + v.y * cos
+            );
         }
     }
 }
