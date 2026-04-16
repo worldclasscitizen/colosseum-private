@@ -1,0 +1,47 @@
+# Unity Generated Files
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# IDE / Editor
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.unityproj
+
+# OS Generated
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Unity Asset Store Tools
+Assets/AssetStoreTools*
+
+# Builds & Packages
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Crashlytics
+crashlytics-build.properties
+sysinfo.txt
+
+# Plastic SCM
+*.private.0
+*.private
+
+# Photon - AppSettings contains your App ID (sensitive)
+Assets/Photon/Fusion/Resources/PhotonAppSettings.asset
