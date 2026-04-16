@@ -153,7 +153,13 @@ namespace Colosseum.Game
         private void OnGameWin(PlayerRef winner)
         {
             Debug.Log($"[Colosseum] GAME OVER! Winner: {winner}");
-            // 나중에: 승리 UI, 게임 종료 처리
+
+            string winnerName = winner == Player1 ? "Player 1" : "Player 2";
+            var gameOverUI = FindObjectOfType<UI.GameOverUI>();
+            if (gameOverUI != null)
+            {
+                gameOverUI.ShowGameOver(winnerName);
+            }
         }
     }
 }
