@@ -51,8 +51,10 @@ namespace Colosseum.Player
             {
                 if (_roomManager.IsOutOfBounds(transform.position))
                 {
-                    Debug.Log("[Colosseum] Player out of bounds!");
-                    Die(_roomManager.LastKiller);
+                    // 맵 밖으로 떨어지면 상대방이 킬한 것으로 처리
+                    PlayerRef opponent = FindOpponentRef();
+                    Debug.Log($"[Colosseum] Player out of bounds! Credited to: {opponent}");
+                    Die(opponent);
                 }
             }
         }
@@ -151,6 +153,21 @@ namespace Colosseum.Player
             {
                 r.enabled = visible;
             }
+        }
+
+        private PlayerRef FindOpponentRef()
+        {
+            var players = FindObjectsOfType<PlayerHealth>();
+            foreach (var p in players)
+            {
+                var netObj = p.GetComponent<Fusion.NetworkObject>();
+                if (netObj != null && netObj.InputAuthority != Object.InputAuthority)
+                {
+                    return netObj.InputAuthority;
+                }
+            }
+            // 솔로 테스트: 상대가 없으면 본인을 killer로 (자해 처리)
+            return Object.InputAuthority;
         }
 
         private Vector2 FindOpponentPosition()

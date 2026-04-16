@@ -76,10 +76,18 @@ namespace Colosseum.Game
         /// </summary>
         public bool TryAdvanceRoom(PlayerRef player, int direction)
         {
-            if (!Object.HasStateAuthority) return false;
+            if (!Object.HasStateAuthority)
+            {
+                Debug.Log("[Colosseum] TryAdvance BLOCKED: no state authority");
+                return false;
+            }
 
             // 승자(마지막 킬한 사람)만 진행 가능
-            if (player != LastKiller) return false;
+            if (player != LastKiller)
+            {
+                Debug.Log($"[Colosseum] TryAdvance BLOCKED: player {player} != LastKiller {LastKiller}");
+                return false;
+            }
 
             // Player1(왼쪽)은 +1 방향, Player2(오른쪽)은 -1 방향으로만 진행
             int targetRoom = CurrentRoomIndex + direction;
@@ -101,8 +109,16 @@ namespace Colosseum.Game
         public void RegisterKill(PlayerRef killer)
         {
             if (!Object.HasStateAuthority) return;
+
+            // Player:None(무효)으로는 LastKiller를 덮어쓰지 않음
+            if (killer == default(PlayerRef))
+            {
+                Debug.Log($"[Colosseum] RegisterKill skipped: killer is None (suicide/out-of-bounds)");
+                return;
+            }
+
             LastKiller = killer;
-            Debug.Log($"[Colosseum] Last killer: {killer}");
+            Debug.Log($"[Colosseum] Last killer set to: {killer}");
         }
 
         /// <summary>

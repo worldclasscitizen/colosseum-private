@@ -84,6 +84,7 @@ namespace Colosseum.Player
             // Player1은 오른쪽 끝 도달 시 다음 방으로
             if (isPlayer1 && transform.position.x >= room.rightBound)
             {
+                Debug.Log($"[Colosseum] Player1 reached right bound! LastKiller:{_roomManager.LastKiller}");
                 if (_roomManager.TryAdvanceRoom(Object.InputAuthority, 1))
                 {
                     OnRoomAdvanced();
@@ -92,6 +93,7 @@ namespace Colosseum.Player
             // Player2는 왼쪽 끝 도달 시 다음 방으로
             else if (!isPlayer1 && transform.position.x <= room.leftBound)
             {
+                Debug.Log($"[Colosseum] Player2 reached left bound! LastKiller:{_roomManager.LastKiller}");
                 if (_roomManager.TryAdvanceRoom(Object.InputAuthority, -1))
                 {
                     OnRoomAdvanced();
