@@ -15,13 +15,22 @@ namespace Colosseum.Network
                 Direction = new Vector2(
                     Input.GetAxisRaw("Horizontal"),
                     Input.GetAxisRaw("Vertical")),
-                IsJumpPressed = Input.GetKey(KeyCode.Space)
+                IsJumpPressed = Input.GetKey(KeyCode.Space),
+                IsFirePressed = Input.GetMouseButton(0),
+                AimDirection = GetAimDirection()
             };
 
             input.Set(data);
         }
 
-        // 나머지 콜백은 빈 구현
+        private Vector2 GetAimDirection()
+        {
+            if (UnityEngine.Camera.main == null) return Vector2.right;
+            Vector3 mouseWorld = UnityEngine.Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mouseWorld.z = 0f;
+            return ((Vector2)mouseWorld).normalized;
+        }
+
         public void OnPlayerJoined(NetworkRunner runner, PlayerRef player) { }
         public void OnPlayerLeft(NetworkRunner runner, PlayerRef player) { }
         public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }

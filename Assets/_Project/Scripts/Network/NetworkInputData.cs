@@ -7,5 +7,7 @@ namespace Colosseum.Network
     {
         public Vector2 Direction;
         public NetworkBool IsJumpPressed;
+        public NetworkBool IsFirePressed;
+        public Vector2 AimDirection;
     }
 }
