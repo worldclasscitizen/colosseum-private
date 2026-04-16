@@ -50,4 +50,6 @@ namespace Colosseum.Network
         public void OnSceneLoadDone(NetworkRunner runner) { }
         public void OnSceneLoadStart(NetworkRunner runner) { }
         public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
-        public void OnObjectEnterAOI(NetworkRunner runner, Netwo
+        public void OnObjectEnterAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player) { }
+    }
+}
