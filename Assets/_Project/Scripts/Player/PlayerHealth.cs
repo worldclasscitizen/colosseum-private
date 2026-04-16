@@ -98,6 +98,9 @@ namespace Colosseum.Player
                 _roomManager.RegisterKill(killer);
             }
 
+            // 킬러에게 HealOnKill 적용
+            ApplyHealOnKill(killer);
+
             // 사망한 플레이어가 카드 드로우
             var cardDeck = FindObjectOfType<CardDeck>();
             if (cardDeck != null)
@@ -181,6 +184,25 @@ namespace Colosseum.Player
                 }
             }
             return Vector2.zero;
+        }
+
+        private void ApplyHealOnKill(PlayerRef killer)
+        {
+            // 킬러를 찾아서 CardEffect의 HealOnKill만큼 회복
+            var players = FindObjectsOfType<NetworkObject>();
+            foreach (var p in players)
+            {
+                if (p.InputAuthority != killer) continue;
+                var killerCardEffect = p.GetComponent<CardEffect>();
+                var killerHealth = p.GetComponent<PlayerHealth>();
+                if (killerCardEffect != null && killerHealth != null && killerCardEffect.HealOnKill > 0f)
+                {
+                    killerHealth.CurrentHealth = Mathf.Min(
+                        killerHealth.CurrentHealth + killerCardEffect.HealOnKill, _maxHealth);
+                    Debug.Log($"[Colosseum] HealOnKill: {killer} healed {killerCardEffect.HealOnKill} HP");
+                }
+                break;
+            }
         }
 
         private void HealAttacker(PlayerRef attacker, float healAmount)

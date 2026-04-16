@@ -10,21 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1e22a3012f64cfb4cb6c31aff07cd6d9, type: 3}
-  m_Name: Bouncy
+  m_Name: Piercing Round
   m_EditorClassIdentifier: 
-  cardName: Bouncy
-  description: Bullets bounce off walls once
+  cardName: Piercing Round
+  description: Bullets pierce through one enemy
   cardIcon: {fileID: 0}
-  rarity: 0
+  rarity: 1
   damageMultiplier: 1
   speedMultiplier: 1
   sizeMultiplier: 1
-  extraBounce: 1
+  extraBounce: 0
   gravityModifier: 0
   fireRateMultiplier: 1
   reloadSpeedMultiplier: 1
   extraBullets: 0
-  extraPierce: 0
+  extraPierce: 1
   knockbackForce: 0
   healAmount: 0
   lifestealPercent: 0

@@ -73,6 +73,7 @@ GameObject:
   - component: {fileID: 6303354499755378338}
   - component: {fileID: 8160630263187465784}
   - component: {fileID: 1496783696655237475}
+  - component: {fileID: 5934933326354761108}
   m_Layer: 0
   m_Name: Gun
   m_TagString: Untagged
@@ -112,8 +113,14 @@ MonoBehaviour:
   _bulletPrefab:
     RawGuidValue: 1075d2600ef914f4a93fc37322960869
   _muzzle: {fileID: 1691406518499451344}
+  _magazineSize: 1
+  _reloadTime: 1.5
   _FireRateMultiplier: 1
   _ExtraBullets: 0
+  _CurrentAmmo: 0
+  _IsReloading:
+    _value: 0
+  _ReloadDuration: 0
 --- !u!212 &1496783696655237475
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -166,6 +173,25 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &5934933326354761108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5878671641065939175}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8902bf8465b241438b9c78d8ba73db4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _gun: {fileID: 0}
+  _muzzle: {fileID: 1691406518499451344}
+  _offset: {x: 0, y: 0.3}
+  _size: 0.25
+  _ringThickness: 0.15
+  _ringColor: {r: 1, g: 1, b: 1, a: 1}
+  _textureResolution: 128
 --- !u!1 &7486084529778625507
 GameObject:
   m_ObjectHideFlags: 0
@@ -433,6 +459,7 @@ MonoBehaviour:
   _GravityModifier: 0
   _MoveSpeedMultiplier: 1
   _JumpForceMultiplier: 1
+  _ReloadSpeedMultiplier: 1
   _CurrentStatusEffect: 0
   _StatusDuration: 0
   _CurrentSpecialEffect: 0

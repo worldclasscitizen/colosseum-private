@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Big Bullet
   m_EditorClassIdentifier: 
   cardName: Big Bullet
-  description: 
+  description: Bullets are 30% larger and 20% stronger
   cardIcon: {fileID: 0}
   rarity: 0
   damageMultiplier: 1.2
@@ -22,12 +22,19 @@ MonoBehaviour:
   extraBounce: 0
   gravityModifier: 0
   fireRateMultiplier: 1
+  reloadSpeedMultiplier: 1
   extraBullets: 0
+  extraPierce: 0
+  knockbackForce: 0
   healAmount: 0
   lifestealPercent: 0
+  healOnKill: 0
   moveSpeedMultiplier: 1
   jumpForceMultiplier: 1
   statusEffect: 0
   statusDuration: 0
+  explosionRadius: 0
+  explosionDamageRatio: 0.5
+  overchargeDamageMultiplier: 1
   specialEffect: 0
   specialValue: 0

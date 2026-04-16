@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1e22a3012f64cfb4cb6c31aff07cd6d9, type: 3}
-  m_Name: Bouncy
+  m_Name: Shove
   m_EditorClassIdentifier: 
-  cardName: Bouncy
-  description: Bullets bounce off walls once
+  cardName: Shove
+  description: Bullets knock enemies back on hit
   cardIcon: {fileID: 0}
-  rarity: 0
+  rarity: 1
   damageMultiplier: 1
   speedMultiplier: 1
   sizeMultiplier: 1
-  extraBounce: 1
+  extraBounce: 0
   gravityModifier: 0
   fireRateMultiplier: 1
   reloadSpeedMultiplier: 1
   extraBullets: 0
   extraPierce: 0
-  knockbackForce: 0
+  knockbackForce: 8
   healAmount: 0
   lifestealPercent: 0
   healOnKill: 0

@@ -20,6 +20,23 @@ namespace Colosseum.Card
         [Networked] public float MoveSpeedMultiplier { get; set; } = 1f;
         [Networked] public float JumpForceMultiplier { get; set; } = 1f;
 
+        // 재장전 강화
+        [Networked] public float ReloadSpeedMultiplier { get; set; } = 1f;
+
+        // 관통 / 넉백
+        [Networked] public int BonusPierce { get; set; } = 0;
+        [Networked] public float KnockbackForce { get; set; } = 0f;
+
+        // 킬 시 회복
+        [Networked] public float HealOnKill { get; set; } = 0f;
+
+        // 폭발
+        [Networked] public float ExplosionRadius { get; set; } = 0f;
+        [Networked] public float ExplosionDamageRatio { get; set; } = 0.5f;
+
+        // 과충전 (재장전 직후 첫 발 데미지 배율)
+        [Networked] public float OverchargeDamageMultiplier { get; set; } = 1f;
+
         // 상태이상
         [Networked] public int CurrentStatusEffect { get; set; } = 0;
         [Networked] public float StatusDuration { get; set; } = 0f;
@@ -36,10 +53,18 @@ namespace Colosseum.Card
             BulletSizeMultiplier *= card.sizeMultiplier;
             MoveSpeedMultiplier *= card.moveSpeedMultiplier;
             JumpForceMultiplier *= card.jumpForceMultiplier;
+            ReloadSpeedMultiplier *= card.reloadSpeedMultiplier;
 
             // 합연산 누적
             BonusBounce += card.extraBounce;
+            BonusPierce += card.extraPierce;
+            KnockbackForce += card.knockbackForce;
+            HealOnKill += card.healOnKill;
             GravityModifier += card.gravityModifier;
+            ExplosionRadius = Mathf.Max(ExplosionRadius, card.explosionRadius);
+            if (card.explosionDamageRatio > 0f)
+                ExplosionDamageRatio = card.explosionDamageRatio;
+            OverchargeDamageMultiplier *= card.overchargeDamageMultiplier;
 
             // 상태이상/특수효과는 최신 카드가 덮어씀
             if (card.statusEffect != StatusEffectType.None)
@@ -69,6 +94,13 @@ namespace Colosseum.Card
             GravityModifier = 0f;
             MoveSpeedMultiplier = 1f;
             JumpForceMultiplier = 1f;
+            ReloadSpeedMultiplier = 1f;
+            BonusPierce = 0;
+            KnockbackForce = 0f;
+            HealOnKill = 0f;
+            ExplosionRadius = 0f;
+            ExplosionDamageRatio = 0.5f;
+            OverchargeDamageMultiplier = 1f;
             CurrentStatusEffect = 0;
             StatusDuration = 0f;
             CurrentSpecialEffect = 0;
