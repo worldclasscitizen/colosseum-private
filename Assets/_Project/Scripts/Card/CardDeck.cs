@@ -42,9 +42,8 @@ namespace Colosseum.Card
             Debug.Log($"[Colosseum] Draw started for {player}: " +
                 $"{GetDrawnCard(0).cardName}, {GetDrawnCard(1).cardName}, {GetDrawnCard(2).cardName}");
 
-            // TODO: UI로 카드 선택 화면 표시
-            // 지금은 자동으로 첫 번째 카드 선택
-            SelectCard(0);
+            // CardSelectionUI가 IsDrawing을 감지해서 UI를 띄움
+            // 플레이어가 클릭하면 SelectCard() 호출됨
         }
 
         /// <summary>
