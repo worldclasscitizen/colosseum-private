@@ -37,4 +37,4 @@ MonoBehaviour:
   explosionDamageRatio: 0.5
   overchargeDamageMultiplier: 1
   specialEffect: 0
-  s
+  specialValue: 0
