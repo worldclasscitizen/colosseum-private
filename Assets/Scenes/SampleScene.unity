@@ -327,6 +327,54 @@ MonoBehaviour:
     leftBound: 0
     rightBound: 0
     centerX: 0
+  - roomName: Right
+    width: 16
+    cameraY: 0
+    cameraSize: 5
+    isWideRoom: 0
+    leftBound: 0
+    rightBound: 0
+    centerX: 0
+  - roomName: Right
+    width: 16
+    cameraY: 0
+    cameraSize: 5
+    isWideRoom: 0
+    leftBound: 0
+    rightBound: 0
+    centerX: 0
+  - roomName: Right
+    width: 16
+    cameraY: 0
+    cameraSize: 5
+    isWideRoom: 0
+    leftBound: 0
+    rightBound: 0
+    centerX: 0
+  - roomName: Right
+    width: 16
+    cameraY: 0
+    cameraSize: 5
+    isWideRoom: 0
+    leftBound: 0
+    rightBound: 0
+    centerX: 0
+  - roomName: Right
+    width: 16
+    cameraY: 0
+    cameraSize: 5
+    isWideRoom: 0
+    leftBound: 0
+    rightBound: 0
+    centerX: 0
+  - roomName: Right
+    width: 16
+    cameraY: 0
+    cameraSize: 5
+    isWideRoom: 0
+    leftBound: 0
+    rightBound: 0
+    centerX: 0
   _roomGap: 0
   _maxRespawnDistance: 8
   _outOfBoundsPadding: 3
@@ -1560,12 +1608,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6f863c5b75b177944b3a94baf806457e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _roomText: {fileID: 1433216155}
-  _roomDots: []
+  _boxSize: 22
+  _boxSpacing: 4
+  _borderWidth: 2
+  _topMargin: 20
+  _emptyColor: {r: 0.15, g: 0.15, b: 0.15, a: 0.8}
+  _borderColor: {r: 0.6, g: 0.6, b: 0.6, a: 0.9}
   _currentRoomColor: {r: 1, g: 1, b: 1, a: 1}
-  _otherRoomColor: {r: 0.4, g: 0.4, b: 0.4, a: 0.6}
-  _player1SideColor: {r: 0.2, g: 0.8, b: 0.2, a: 1}
-  _player2SideColor: {r: 0.8, g: 0.2, b: 0.2, a: 1}
 --- !u!1 &986514803
 GameObject:
   m_ObjectHideFlags: 0
@@ -2492,31 +2541,4 @@ MonoBehaviour:
   m_uvLineOffset: 0
   m_geometrySortingOrder: 0
   m_IsTextObjectScaleStatic: 0
-  m_VertexBufferAutoSizeReduction: 0
-  m_useMaxVisibleDescender: 1
-  m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
-  m_isUsingLegacyAnimationComponent: 0
-  m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
-  m_baseMaterial: {fileID: 0}
-  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!222 &2097442267
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2097442264}
-  m_CullTransparentMesh: 1
---- !u!1660057539 &9223372036854775807
-SceneRoots:
-  m_ObjectHideFlags: 0
-  m_Roots:
-  - {fileID: 519420032}
-  - {fileID: 619394802}
-  - {fileID: 1092112369}
-  - {fileID: 2048012305}
-  - {fileID: 164967424}
-  - {fileID: 864315274}
-  - {fileID: 1180555976}
+ 

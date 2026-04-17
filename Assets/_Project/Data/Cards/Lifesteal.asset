@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Lifesteal
   m_EditorClassIdentifier: 
   cardName: Lifesteal
-  description: Restore 10 HP on kill
+  description: Drain 10% of damage dealt as health
   cardIcon: {fileID: 0}
   rarity: 1
   damageMultiplier: 1
@@ -27,8 +27,8 @@ MonoBehaviour:
   extraPierce: 0
   knockbackForce: 0
   healAmount: 0
-  lifestealPercent: 0
-  healOnKill: 10
+  lifestealPercent: 0.1
+  healOnKill: 0
   moveSpeedMultiplier: 1
   jumpForceMultiplier: 1
   statusEffect: 0
@@ -37,4 +37,4 @@ MonoBehaviour:
   explosionDamageRatio: 0.5
   overchargeDamageMultiplier: 1
   specialEffect: 0
-  specialValue: 0
+  s

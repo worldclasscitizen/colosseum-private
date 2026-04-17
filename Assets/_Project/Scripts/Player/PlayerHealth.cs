@@ -125,6 +125,13 @@ namespace Colosseum.Player
                 _rb.velocity = Vector2.zero;
             }
 
+            // 총 재장전 리셋
+            var gun = GetComponentInChildren<Gun>();
+            if (gun != null)
+            {
+                gun.ForceReload();
+            }
+
             // 리스폰 위치 계산
             if (_roomManager != null)
             {
@@ -186,36 +193,36 @@ namespace Colosseum.Player
             return Vector2.zero;
         }
 
-        private void ApplyHealOnKill(PlayerRef killer)
+        private void HealAttacker(PlayerRef attacker, float healAmount)
         {
-            // 킬러를 찾아서 CardEffect의 HealOnKill만큼 회복
-            var players = FindObjectsOfType<NetworkObject>();
+            var players = FindObjectsOfType<PlayerHealth>();
             foreach (var p in players)
             {
-                if (p.InputAuthority != killer) continue;
-                var killerCardEffect = p.GetComponent<CardEffect>();
-                var killerHealth = p.GetComponent<PlayerHealth>();
-                if (killerCardEffect != null && killerHealth != null && killerCardEffect.HealOnKill > 0f)
-                {
-                    killerHealth.CurrentHealth = Mathf.Min(
-                        killerHealth.CurrentHealth + killerCardEffect.HealOnKill, _maxHealth);
-                    Debug.Log($"[Colosseum] HealOnKill: {killer} healed {killerCardEffect.HealOnKill} HP");
-                }
+                var netObj = p.GetComponent<NetworkObject>();
+                if (netObj == null || netObj.InputAuthority != attacker) continue;
+
+                p.CurrentHealth = Mathf.Min(p.CurrentHealth + healAmount, _maxHealth);
+                Debug.Log($"[Colosseum] Lifesteal: healed {attacker} for {healAmount:F1} HP");
                 break;
             }
         }
 
-        private void HealAttacker(PlayerRef attacker, float healAmount)
+        private void ApplyHealOnKill(PlayerRef killer)
         {
-            var players = FindObjectsOfType<NetworkObject>();
+            if (killer == default(PlayerRef)) return;
+
+            // 킬러를 찾아서 CardEffect의 HealOnKill만큼 회복
+            var players = FindObjectsOfType<PlayerHealth>();
             foreach (var p in players)
             {
-                if (p.InputAuthority != attacker) continue;
-                var health = p.GetComponent<PlayerHealth>();
-                if (health != null)
+                var netObj = p.GetComponent<NetworkObject>();
+                if (netObj == null || netObj.InputAuthority != killer) continue;
+
+                var cardEffect = p.GetComponent<CardEffect>();
+                if (cardEffect != null && cardEffect.HealOnKill > 0f)
                 {
-                    health.CurrentHealth = Mathf.Min(
-                        health.CurrentHealth + healAmount, _maxHealth);
+                    p.CurrentHealth = Mathf.Min(p.CurrentHealth + cardEffect.HealOnKill, _maxHealth);
+                    Debug.Log($"[Colosseum] HealOnKill: healed {killer} for {cardEffect.HealOnKill} HP");
                 }
                 break;
             }

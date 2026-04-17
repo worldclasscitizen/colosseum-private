@@ -1,24 +1,40 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 using Colosseum.Game;
 
 namespace Colosseum.UI
 {
+    /// <summary>
+    /// 화면 상단 중앙에 9칸 박스를 표시.
+    /// 현재 방 인덱스에 해당하는 박스만 색칠됨.
+    /// 코드로 UI를 생성하므로 인스펙터 설정 불필요.
+    /// </summary>
     public class RoomIndicatorUI : MonoBehaviour
     {
-        [Header("UI References")]
-        [SerializeField] private TextMeshProUGUI _roomText;
-        [SerializeField] private Image[] _roomDots;
+        [Header("Appearance")]
+        [SerializeField] private float _boxSize = 22f;
+        [SerializeField] private float _boxSpacing = 4f;
+        [SerializeField] private float _borderWidth = 2f;
+        [SerializeField] private float _topMargin = 20f;
 
         [Header("Colors")]
+        [SerializeField] private Color _emptyColor = new Color(0.15f, 0.15f, 0.15f, 0.8f);
+        [SerializeField] private Color _borderColor = new Color(0.6f, 0.6f, 0.6f, 0.9f);
         [SerializeField] private Color _currentRoomColor = Color.white;
-        [SerializeField] private Color _otherRoomColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
-        [SerializeField] private Color _player1SideColor = new Color(0.2f, 0.8f, 0.2f); // 초록
-        [SerializeField] private Color _player2SideColor = new Color(0.8f, 0.2f, 0.2f); // 빨강
 
         private RoomManager _roomManager;
+        private Image[] _boxImages;
         private int _lastRoomIndex = -1;
+        private bool _initialized = false;
+
+        private void Start()
+        {
+            // 기존 자식(Text 등) 제거
+            foreach (Transform child in transform)
+            {
+                Destroy(child.gameObject);
+            }
+        }
 
         private void Update()
         {
@@ -30,57 +46,81 @@ namespace Colosseum.UI
 
             if (_roomManager.Object == null || !_roomManager.Object.IsValid) return;
 
-            int currentRoom = _roomManager.CurrentRoomIndex;
             int totalRooms = _roomManager.RoomCount;
+            if (totalRooms <= 0) return;
 
+            // 방 수가 확정되면 UI 생성
+            if (!_initialized)
+            {
+                CreateBoxes(totalRooms);
+                _initialized = true;
+            }
+
+            int currentRoom = _roomManager.CurrentRoomIndex;
             if (currentRoom != _lastRoomIndex)
             {
-                Debug.Log($"[Colosseum] RoomIndicator - Room:{currentRoom}, Total:{totalRooms}, Center:{totalRooms / 2}");
                 _lastRoomIndex = currentRoom;
-                UpdateDisplay(currentRoom);
+                UpdateBoxes(currentRoom);
             }
         }
 
-        private void UpdateDisplay(int currentRoom)
+        private void CreateBoxes(int count)
         {
-            int totalRooms = _roomManager.RoomCount;
-            int centerRoom = totalRooms / 2;
+            _boxImages = new Image[count];
 
-            // 텍스트 업데이트
-            if (_roomText != null)
+            // 컨테이너: 화면 상단 중앙에 가로 정렬
+            var container = new GameObject("BoxContainer");
+            container.transform.SetParent(transform, false);
+
+            var containerRect = container.AddComponent<RectTransform>();
+            containerRect.anchorMin = new Vector2(0.5f, 1f);
+            containerRect.anchorMax = new Vector2(0.5f, 1f);
+            containerRect.pivot = new Vector2(0.5f, 1f);
+
+            float totalWidth = count * (_boxSize + _borderWidth * 2) + (count - 1) * _boxSpacing;
+            float totalHeight = _boxSize + _borderWidth * 2;
+            containerRect.sizeDelta = new Vector2(totalWidth, totalHeight);
+            containerRect.anchoredPosition = new Vector2(0f, -_topMargin);
+
+            // HorizontalLayoutGroup
+            var layout = container.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = _boxSpacing;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+
+            for (int i = 0; i < count; i++)
             {
-                if (currentRoom == centerRoom)
-                    _roomText.text = "CENTER";
-                else if (currentRoom < centerRoom)
-                    _roomText.text = $"P2 SIDE ({centerRoom - currentRoom})";
-                else
-                    _roomText.text = $"P1 SIDE ({currentRoom - centerRoom})";
+                // 보더 (바깥 박스)
+                var borderObj = new GameObject($"Border_{i}");
+                borderObj.transform.SetParent(container.transform, false);
+                var borderImage = borderObj.AddComponent<Image>();
+                borderImage.color = _borderColor;
+
+                // 내부 박스 (보더 안쪽)
+                var boxObj = new GameObject($"Box_{i}");
+                boxObj.transform.SetParent(borderObj.transform, false);
+                var boxRect = boxObj.GetComponent<RectTransform>();
+                boxRect.anchorMin = Vector2.zero;
+                boxRect.anchorMax = Vector2.one;
+                boxRect.offsetMin = new Vector2(_borderWidth, _borderWidth);
+                boxRect.offsetMax = new Vector2(-_borderWidth, -_borderWidth);
+
+                var boxImage = boxObj.AddComponent<Image>();
+                boxImage.color = _emptyColor;
+                _boxImages[i] = boxImage;
             }
+        }
 
-            // 방 점 업데이트
-            if (_roomDots != null)
+        private void UpdateBoxes(int currentRoom)
+        {
+            if (_boxImages == null) return;
+
+            for (int i = 0; i < _boxImages.Length; i++)
             {
-                for (int i = 0; i < _roomDots.Length; i++)
-                {
-                    if (i >= totalRooms)
-                    {
-                        _roomDots[i].gameObject.SetActive(false);
-                        continue;
-                    }
-
-                    _roomDots[i].gameObject.SetActive(true);
-
-                    if (i == currentRoom)
-                    {
-                        _roomDots[i].color = _currentRoomColor;
-                        _roomDots[i].transform.localScale = Vector3.one * 1.3f;
-                    }
-                    else
-                    {
-                        _roomDots[i].color = _otherRoomColor;
-                        _roomDots[i].transform.localScale = Vector3.one;
-                    }
-                }
+                _boxImages[i].color = (i == currentRoom) ? _currentRoomColor : _emptyColor;
             }
         }
     }
