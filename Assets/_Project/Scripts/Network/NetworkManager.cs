@@ -17,11 +17,28 @@ namespace Colosseum.Network
         [Header("Player")]
         [SerializeField] private NetworkPrefabRef _playerPrefab;
 
+        /// <summary>
+        /// MainMenuUI에서 Dev Mode 진입 시 true로 설정.
+        /// 씬 로드 후 자동으로 Host를 시작한다.
+        /// </summary>
+        public static bool AutoStartDevMode = false;
+
         private NetworkRunner _runner;
         private Dictionary<PlayerRef, NetworkObject> _spawnedPlayers = new();
 
+        private void Start()
+        {
+            if (AutoStartDevMode)
+            {
+                AutoStartDevMode = false; // 플래그 리셋
+                Debug.Log("[Colosseum] Dev Mode: Auto-starting Host...");
+                StartGame(GameMode.Host);
+            }
+        }
+
         private void OnGUI()
         {
+            // Dev Mode 자동 시작 시 버튼 표시 불필요
             if (_runner == null)
             {
                 if (GUI.Button(new Rect(20, 20, 200, 40), "Start Host"))

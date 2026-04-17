@@ -20,10 +20,12 @@ namespace Colosseum.UI
 
         private void Start()
         {
-            _cardPanel.SetActive(false);
+            if (_cardPanel != null)
+                _cardPanel.SetActive(false);
 
             for (int i = 0; i < _cardButtons.Length; i++)
             {
+                if (_cardButtons[i] == null) continue;
                 int index = i;
                 _cardButtons[i].onClick.AddListener(() => OnCardSelected(index));
             }
@@ -39,6 +41,9 @@ namespace Colosseum.UI
 
             // Spawned 전에는 Networked 속성 접근 불가
             if (_cardDeck.Object == null || !_cardDeck.Object.IsValid) return;
+
+            // _cardPanel이 파괴되었으면 카드 UI 표시 불가
+            if (_cardPanel == null) return;
 
             if (_cardDeck.IsDrawing && !_isShowing)
             {
@@ -93,7 +98,7 @@ namespace Colosseum.UI
             {
                 case CardRarity.Common: return new Color(0.7f, 0.7f, 0.7f);
                 case CardRarity.Rare: return new Color(0.2f, 0.5f, 1f);
-                case CardRarity.Legendary: return new Color(1f, 0.8f, 0f);
+                case CardRarity.Legendary: return new Color(1f, 0.84f, 0f);
                 default: return Color.white;
             }
         }

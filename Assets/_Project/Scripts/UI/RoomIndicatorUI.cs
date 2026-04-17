@@ -102,13 +102,15 @@ namespace Colosseum.UI
                 // 내부 박스 (보더 안쪽)
                 var boxObj = new GameObject($"Box_{i}");
                 boxObj.transform.SetParent(borderObj.transform, false);
+
+                // Image를 먼저 추가해야 RectTransform이 자동 생성됨
+                var boxImage = boxObj.AddComponent<Image>();
+
                 var boxRect = boxObj.GetComponent<RectTransform>();
                 boxRect.anchorMin = Vector2.zero;
                 boxRect.anchorMax = Vector2.one;
                 boxRect.offsetMin = new Vector2(_borderWidth, _borderWidth);
                 boxRect.offsetMax = new Vector2(-_borderWidth, -_borderWidth);
-
-                var boxImage = boxObj.AddComponent<Image>();
                 boxImage.color = _emptyColor;
                 _boxImages[i] = boxImage;
             }

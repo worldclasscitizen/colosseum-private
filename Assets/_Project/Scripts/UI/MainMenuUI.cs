@@ -1,7 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 using TMPro;
+using Colosseum.Network;
 
 namespace Colosseum.UI
 {
@@ -57,6 +59,14 @@ namespace Colosseum.UI
 
             canvasObj.AddComponent<GraphicRaycaster>();
 
+            // ── EventSystem (UI 클릭 이벤트 처리에 필수) ──
+            if (FindObjectOfType<EventSystem>() == null)
+            {
+                var eventSystemObj = new GameObject("EventSystem");
+                eventSystemObj.AddComponent<EventSystem>();
+                eventSystemObj.AddComponent<StandaloneInputModule>();
+            }
+
             // ── 배경 ──
             var bgObj = new GameObject("Background");
             bgObj.transform.SetParent(canvasObj.transform, false);
@@ -96,11 +106,11 @@ namespace Colosseum.UI
             CreateSpacer(container.transform, 30f);
 
             // ── 버튼 5개 ──
-            CreateMenuButton(container.transform, "\u25b6  Create Room", OnCreateRoom);
-            CreateMenuButton(container.transform, "\u25cb  Find Room", OnFindRoom);
-            CreateMenuButton(container.transform, "\u2692  Dev Mode", OnDevMode);
-            CreateMenuButton(container.transform, "\u2699  Settings", OnSettings);
-            CreateMenuButton(container.transform, "\u2716  Quit Game", OnQuitGame);
+            CreateMenuButton(container.transform, ">  Create Room", OnCreateRoom);
+            CreateMenuButton(container.transform, "o  Find Room", OnFindRoom);
+            CreateMenuButton(container.transform, "#  Dev Mode", OnDevMode);
+            CreateMenuButton(container.transform, "*  Settings", OnSettings);
+            CreateMenuButton(container.transform, "x  Quit Game", OnQuitGame);
 
             // ── 알림 텍스트 (화면 하단) ──
             var noticeObj = new GameObject("NoticeText");
@@ -196,22 +206,23 @@ namespace Colosseum.UI
 
         private void OnCreateRoom()
         {
-            ShowNotice("온라인 멀티 기능은 추후에 구현 예정입니다.");
+            ShowNotice("Online multiplayer is coming soon.");
         }
 
         private void OnFindRoom()
         {
-            ShowNotice("온라인 멀티 기능은 추후에 구현 예정입니다.");
+            ShowNotice("Online multiplayer is coming soon.");
         }
 
         private void OnDevMode()
         {
+            NetworkManager.AutoStartDevMode = true;
             SceneManager.LoadScene(_gameSceneName);
         }
 
         private void OnSettings()
         {
-            ShowNotice("설정 기능은 추후에 구현 예정입니다.");
+            ShowNotice("Settings is coming soon.");
         }
 
         private void OnQuitGame()
