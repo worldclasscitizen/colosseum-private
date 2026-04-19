@@ -22,6 +22,7 @@ namespace Colosseum.Player
         private RoomManager _roomManager;
         private SpriteRenderer _spriteRenderer;
         private Rigidbody2D _rb;
+        private CardDeck _cardDeck;
 
         public override void Spawned()
         {
@@ -34,6 +35,7 @@ namespace Colosseum.Player
             _roomManager = FindObjectOfType<RoomManager>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _rb = GetComponent<Rigidbody2D>();
+            _cardDeck = FindObjectOfType<CardDeck>();
         }
 
         public override void FixedUpdateNetwork()
@@ -41,7 +43,7 @@ namespace Colosseum.Player
             if (!Object.HasStateAuthority) return;
 
             // 리스폰 타이머
-            if (IsDead && _respawnTimer.Expired(Runner))
+            if (IsDead && _respawnTimer.Expired(Runner) && !IsWaitingForCardSelection())
             {
                 DoRespawn();
             }
@@ -86,30 +88,37 @@ namespace Colosseum.Player
 
         private void Die(PlayerRef killer)
         {
+            bool isSuicide = killer == default(PlayerRef) || killer == Object.InputAuthority;
+            PlayerRef creditedKiller = isSuicide ? default(PlayerRef) : killer;
+
             IsDead = true;
             CurrentHealth = 0f;
 
             // 시각적 비활성화 (본인 + 자식 포함)
             SetVisuals(false);
 
+            // 사망한 플레이어는 원인과 무관하게 카드 드로우 대상이다.
+            if (_cardDeck == null)
+            {
+                _cardDeck = FindObjectOfType<CardDeck>();
+            }
+
+            if (_cardDeck != null)
+            {
+                _cardDeck.StartDraw(Object.InputAuthority);
+            }
+
             // RoomManager에 킬 등록
             if (_roomManager != null)
             {
-                _roomManager.RegisterKill(killer);
+                _roomManager.RegisterKill(creditedKiller);
             }
 
             // 킬러에게 HealOnKill 적용
-            ApplyHealOnKill(killer);
-
-            // 사망한 플레이어가 카드 드로우
-            var cardDeck = FindObjectOfType<CardDeck>();
-            if (cardDeck != null)
-            {
-                cardDeck.StartDraw(Object.InputAuthority);
-            }
+            ApplyHealOnKill(creditedKiller);
 
             _respawnTimer = TickTimer.CreateFromSeconds(Runner, _respawnDelay);
-            Debug.Log($"[Colosseum] Player died! Killer: {killer}");
+            Debug.Log($"[Colosseum] Player died! Killer: {creditedKiller} (original: {killer}, suicide:{isSuicide})");
         }
 
         private void DoRespawn()
@@ -141,6 +150,21 @@ namespace Colosseum.Player
             }
 
             Debug.Log("[Colosseum] Player respawned!");
+        }
+
+        private bool IsWaitingForCardSelection()
+        {
+            if (_cardDeck == null)
+            {
+                _cardDeck = FindObjectOfType<CardDeck>();
+            }
+
+            if (_cardDeck == null || _cardDeck.Object == null || !_cardDeck.Object.IsValid)
+            {
+                return false;
+            }
+
+            return _cardDeck.IsDrawing && _cardDeck.DrawingPlayer == Object.InputAuthority;
         }
 
         public void ForceDeath(PlayerRef killer)
