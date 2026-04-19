@@ -11,6 +11,7 @@ namespace Colosseum.Player
         [Header("Movement")]
         [SerializeField] private float _moveSpeed = 8f;
         [SerializeField] private float _jumpForce = 12f;
+        [SerializeField] private float _boundaryPadding = 0.25f;
 
         [Header("Ground Check")]
         [SerializeField] private Transform _groundCheck;
@@ -18,6 +19,7 @@ namespace Colosseum.Player
         [SerializeField] private LayerMask _groundLayer;
 
         private Rigidbody2D _rb;
+        private Collider2D _bodyCollider;
         private SpriteRenderer _spriteRenderer;
         private PlayerHealth _health;
         private RoomManager _roomManager;
@@ -28,6 +30,7 @@ namespace Colosseum.Player
         public override void Spawned()
         {
             _rb = GetComponent<Rigidbody2D>();
+            _bodyCollider = GetComponent<Collider2D>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
             _health = GetComponent<PlayerHealth>();
             _roomManager = FindObjectOfType<RoomManager>();
@@ -67,11 +70,11 @@ namespace Colosseum.Player
                     _spriteRenderer.flipX = input.Direction.x < 0;
 
                 // 방 끝 도달 감지
-                CheckRoomBoundary();
+                CheckRoomBoundary(input.Direction.x);
             }
         }
 
-        private void CheckRoomBoundary()
+        private void CheckRoomBoundary(float moveX)
         {
             if (_roomManager == null) return;
             if (!Object.HasStateAuthority) return;
@@ -80,24 +83,122 @@ namespace Colosseum.Player
             if (room == null) return;
 
             bool isPlayer1 = Object.InputAuthority == _roomManager.Player1;
+            float currentX = transform.position.x;
+            float horizontalExtent = GetHorizontalBoundaryExtent();
 
-            // Player1은 오른쪽 끝 도달 시 다음 방으로
-            if (isPlayer1 && transform.position.x >= room.rightBound)
+            if (isPlayer1)
             {
-                Debug.Log($"[Colosseum] Player1 reached right bound! LastKiller:{_roomManager.LastKiller}");
-                if (_roomManager.TryAdvanceRoom(Object.InputAuthority, 1))
+                // 본인 진영(왼쪽) 쪽으로는 카메라 밖으로 나가지 못하게 막는다.
+                float ownSideClampX = GetVisibleLeftBoundary(room) + horizontalExtent;
+                bool pushingOwnSideOutward = moveX < 0f;
+                if (currentX < ownSideClampX || (currentX <= ownSideClampX && pushingOwnSideOutward))
                 {
-                    OnRoomAdvanced();
+                    ClampToX(ownSideClampX);
+                    return;
                 }
+
+                // Player1은 오른쪽 끝 도달 시 다음 방으로
+                float forwardBoundaryX = room.rightBound - horizontalExtent;
+                bool pushingForward = moveX > 0f;
+                if (currentX > forwardBoundaryX || (currentX >= forwardBoundaryX && pushingForward))
+                {
+                    Debug.Log($"[Colosseum] Player1 reached right bound! LastKiller:{_roomManager.LastKiller}");
+                    if (_roomManager.TryAdvanceRoom(Object.InputAuthority, 1))
+                    {
+                        MoveIntoAdvancedRoom(isPlayer1);
+                        OnRoomAdvanced();
+                    }
+                    else
+                    {
+                        ClampToX(forwardBoundaryX);
+                    }
+                }
+
+                return;
             }
+
+            // 본인 진영(오른쪽) 쪽으로는 카메라 밖으로 나가지 못하게 막는다.
+            float ownSideRightClampX = GetVisibleRightBoundary(room) - horizontalExtent;
+            bool pushingOwnSideOutwardRight = moveX > 0f;
+            if (currentX > ownSideRightClampX || (currentX >= ownSideRightClampX && pushingOwnSideOutwardRight))
+            {
+                ClampToX(ownSideRightClampX);
+                return;
+            }
+
             // Player2는 왼쪽 끝 도달 시 다음 방으로
-            else if (!isPlayer1 && transform.position.x <= room.leftBound)
+            float forwardLeftBoundaryX = room.leftBound + horizontalExtent;
+            bool pushingForwardLeft = moveX < 0f;
+            if (currentX < forwardLeftBoundaryX || (currentX <= forwardLeftBoundaryX && pushingForwardLeft))
             {
                 Debug.Log($"[Colosseum] Player2 reached left bound! LastKiller:{_roomManager.LastKiller}");
                 if (_roomManager.TryAdvanceRoom(Object.InputAuthority, -1))
                 {
+                    MoveIntoAdvancedRoom(isPlayer1);
                     OnRoomAdvanced();
                 }
+                else
+                {
+                    ClampToX(forwardLeftBoundaryX);
+                }
+            }
+        }
+
+        private void MoveIntoAdvancedRoom(bool isPlayer1)
+        {
+            var advancedRoom = _roomManager.GetCurrentRoom();
+            if (advancedRoom == null) return;
+
+            float horizontalExtent = GetHorizontalBoundaryExtent();
+            float targetX = isPlayer1
+                ? advancedRoom.leftBound + horizontalExtent
+                : advancedRoom.rightBound - horizontalExtent;
+
+            ClampToX(targetX);
+        }
+
+        private float GetHorizontalBoundaryExtent()
+        {
+            float extent = _boundaryPadding;
+
+            if (_bodyCollider != null)
+            {
+                extent = Mathf.Max(extent, _bodyCollider.bounds.extents.x);
+            }
+
+            if (_spriteRenderer != null)
+            {
+                extent = Mathf.Max(extent, _spriteRenderer.bounds.extents.x);
+            }
+
+            return extent;
+        }
+
+        private float GetVisibleLeftBoundary(RoomData room)
+        {
+            var cam = UnityEngine.Camera.main;
+            if (cam == null) return room.leftBound;
+
+            return cam.transform.position.x - cam.orthographicSize * cam.aspect;
+        }
+
+        private float GetVisibleRightBoundary(RoomData room)
+        {
+            var cam = UnityEngine.Camera.main;
+            if (cam == null) return room.rightBound;
+
+            return cam.transform.position.x + cam.orthographicSize * cam.aspect;
+        }
+
+        private void ClampToX(float targetX)
+        {
+            Vector3 pos = transform.position;
+            pos.x = targetX;
+            transform.position = pos;
+
+            if (_rb != null)
+            {
+                _rb.velocity = new Vector2(0f, _rb.velocity.y);
             }
         }
 

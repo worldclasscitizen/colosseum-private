@@ -82,8 +82,10 @@ namespace Colosseum.Game
                 return false;
             }
 
-            // 승자(마지막 킬한 사람)만 진행 가능
-            if (player != LastKiller)
+            bool hasLastKiller = LastKiller != default(PlayerRef);
+
+            // 마지막 킬 기록이 있을 때만 해당 승자에게 전진 권한을 제한한다.
+            if (hasLastKiller && player != LastKiller)
             {
                 Debug.Log($"[Colosseum] TryAdvance BLOCKED: player {player} != LastKiller {LastKiller}");
                 return false;
