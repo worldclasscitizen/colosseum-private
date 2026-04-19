@@ -1,6 +1,10 @@
 using UnityEngine;
 using Fusion;
 using System.Collections.Generic;
+using Colosseum.UI;
+using TMPro;
+using System.Linq;
+using System.Reflection;
 
 namespace Colosseum.Card
 {
@@ -42,8 +46,14 @@ namespace Colosseum.Card
             Debug.Log($"[Colosseum] Draw started for {player}: " +
                 $"{GetDrawnCard(0).cardName}, {GetDrawnCard(1).cardName}, {GetDrawnCard(2).cardName}");
 
-            // CardSelectionUI가 IsDrawing을 감지해서 UI를 띄움
-            // 플레이어가 클릭하면 SelectCard() 호출됨
+            var cardSelectionUI = FindObjectOfType<CardSelectionUI>();
+            if (cardSelectionUI != null)
+            {
+                cardSelectionUI.ShowCards();
+                ForceCardPanelState(cardSelectionUI, true);
+            }
+
+            ShowFallbackCardPanel();
         }
 
         /// <summary>
@@ -60,6 +70,13 @@ namespace Colosseum.Card
             ApplyCard(DrawingPlayer, selected);
 
             IsDrawing = false;
+            var cardSelectionUI = FindObjectOfType<CardSelectionUI>();
+            if (cardSelectionUI != null)
+            {
+                cardSelectionUI.HideCards();
+                ForceCardPanelState(cardSelectionUI, false);
+            }
+            HideFallbackCardPanel();
             Debug.Log($"[Colosseum] {DrawingPlayer} selected: {selected.cardName}");
         }
 
@@ -109,6 +126,90 @@ namespace Colosseum.Card
                 Debug.Log($"[Colosseum] Card applied: {card.cardName} to {player}");
                 break;
             }
+        }
+
+        private void ShowFallbackCardPanel()
+        {
+            GameObject panel = FindInactiveCardPanel();
+            if (panel == null)
+            {
+                return;
+            }
+
+            ApplyDrawnCardTexts(panel);
+            panel.SetActive(true);
+        }
+
+        private void ApplyDrawnCardTexts(GameObject panel)
+        {
+            for (int i = 0; i < _drawChoices; i++)
+            {
+                CardData card = GetDrawnCard(i);
+                if (card == null)
+                {
+                    continue;
+                }
+
+                Transform cardTransform = panel.transform.Find($"Card{i}");
+                if (cardTransform == null)
+                {
+                    continue;
+                }
+
+                Transform nameTransform = cardTransform.Find("CardName");
+                if (nameTransform != null)
+                {
+                    var nameText = nameTransform.GetComponent<TextMeshProUGUI>();
+                    if (nameText != null)
+                    {
+                        nameText.text = card.cardName;
+                    }
+                }
+
+                Transform descriptionTransform = cardTransform.Find("CardDesc");
+                if (descriptionTransform != null)
+                {
+                    var descriptionText = descriptionTransform.GetComponent<TextMeshProUGUI>();
+                    if (descriptionText != null)
+                    {
+                        descriptionText.text = card.description;
+                    }
+                }
+            }
+        }
+
+        private void HideFallbackCardPanel()
+        {
+            GameObject panel = FindInactiveCardPanel();
+            if (panel != null)
+            {
+                panel.SetActive(false);
+            }
+        }
+
+        private GameObject FindInactiveCardPanel()
+        {
+            var panelTransform = Resources.FindObjectsOfTypeAll<Transform>()
+                .FirstOrDefault(t => t.name == "CardPanel");
+
+            return panelTransform != null ? panelTransform.gameObject : null;
+        }
+
+        private void ForceCardPanelState(CardSelectionUI cardSelectionUI, bool active)
+        {
+            FieldInfo field = typeof(CardSelectionUI).GetField("_cardPanel", BindingFlags.Instance | BindingFlags.NonPublic);
+            GameObject panel = field?.GetValue(cardSelectionUI) as GameObject;
+            if (panel == null)
+            {
+                return;
+            }
+
+            if (active)
+            {
+                ApplyDrawnCardTexts(panel);
+            }
+
+            panel.SetActive(active);
         }
     }
 }
