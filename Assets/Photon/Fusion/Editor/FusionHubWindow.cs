@@ -197,7 +197,12 @@ namespace Fusion.Editor {
     }
 
     private void DrawHeader() {
-      GUILayout.Label(GetIcon(Icon.ProductLogo), _navbarHeaderGraphicStyle);
+      var logo = GetIcon(Icon.ProductLogo);
+      if (logo != null) {
+        GUILayout.Label(logo, _navbarHeaderGraphicStyle);
+      } else {
+        GUILayout.Label(Constants.WindowTitle, _navbarHeaderGraphicStyle);
+      }
     }
 
     private void DrawFooter() {
@@ -221,13 +226,14 @@ namespace Fusion.Editor {
 
     private static void DrawButtonAction(Texture2D icon, string header, string description = null, bool? active = null, Action callback = null, int? width = null) {
       var padding = GUI.skin.button.padding.top + GUI.skin.button.padding.bottom;
-      var height = icon.height + padding;
+      var height = (icon != null ? icon.height : 24) + padding;
 
       var renderStyle = active.HasValue && active.Value == true ? buttonActiveStyle : GUI.skin.button;
       // Draw text separately (not part of button guiconent) to have control over the space between the icon and the text.
       var rect = EditorGUILayout.GetControlRect(false, height, width.HasValue ? GUILayout.Width(width.Value) : GUILayout.ExpandWidth(true));
       var clicked = GUI.Button(rect, icon, renderStyle);
-      GUI.Label(new Rect(rect) { xMin = rect.xMin + icon.width + 20 },
+      var iconWidth = icon != null ? icon.width : 0;
+      GUI.Label(new Rect(rect) { xMin = rect.xMin + iconWidth + 20 },
         description == null ? "<b>" + header + "</b>" : string.Format("<b>{0}</b>\n{1}", header, "<color=#aaaaaa>" + description + "</color>"));
       if (clicked && callback != null) {
         callback.Invoke();
